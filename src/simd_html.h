@@ -12,14 +12,13 @@
 typedef struct {
     const char *start;
     const char *end;
+    size_t base_offset;
     size_t offset;
     uint64_t matches;
 } simd_html_match_state_t;
 
 static inline void simd_html_match_state_update(simd_html_match_state_t *state, const char *buffer) {
     if (state == NULL || buffer == NULL) return;
-
-    printf("buffer: %s\n", buffer);
 
     static uint8_t low_nibble_mask_data[32] = {
         0, 0, 0, 0, 0, 0, 0x26, 0, 
@@ -142,14 +141,13 @@ static simd_html_match_state_t simd_html_match_state_init(const char *start, con
     simd_html_match_state_t state;
     state.start = start;
     state.end = end;
+    state.base_offset = 0;
     state.offset = 0;
     state.matches = 0;
 
     if (start + 64 >= end) {
-        printf("Careful update\n");
         simd_html_match_state_careful_update(&state);
     } else {
-        printf("Update\n");
         simd_html_match_state_update(&state, start);
     }
 
@@ -164,6 +162,9 @@ void simd_html_match_state_consume(simd_html_match_state_t *state) {
 bool simd_html_match_state_advance(simd_html_match_state_t *state) {
     while (state->matches == 0) {
         state->start += 64;
+        state->base_offset += 64;
+        state->offset = state->base_offset;
+
         if (state->start >= state->end) {
             return false;
         }
@@ -173,7 +174,6 @@ bool simd_html_match_state_advance(simd_html_match_state_t *state) {
                 return false;
             }
         } else {
-            printf("Update\n");
             simd_html_match_state_update(state, (const char *)state->start);
         }
     }
