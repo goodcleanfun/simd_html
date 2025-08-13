@@ -1,6 +1,6 @@
 {
     "name": "simd_html",
-    "version": "0.0.0",
+    "version": "0.0.1",
     "repo": "goodcleanfun/simd_html",
     "description": "Fast streaming HTML parser using SIMDe for token classification",
     "keywords": ["simd", "html", "parser", "streaming"],
