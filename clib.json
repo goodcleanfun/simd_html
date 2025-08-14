@@ -14,6 +14,6 @@
         "silentbicycle/greatest": "*"
     },
     "src": [
-        "src/simd_html.h"
+        "src/vector_classification.h"
     ]
   }

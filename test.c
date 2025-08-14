@@ -7,7 +7,7 @@
 
 #include "greatest/greatest.h"
 #include "aligned/aligned.h"
-#include "simd_html.h"
+#include "vector_classification.h"
 
 TEST test_html_scan(void) {
     const char *html = "<!doctype html><html><head><title>A Document</title><link rel=\"stylesheet\" href=\"style.css\"></head><body><h1>Hello, World!</h1></body></html>";
