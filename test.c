@@ -19,7 +19,7 @@ TEST test_html_scan(void) {
     data[len] = '\0';
 
     for (simd_html_match_state_t state = simd_html_match_state_init((const char *)data, (const char *)data + len); simd_html_match_state_advance(&state); simd_html_match_state_consume(&state)) {
-        ASSERT_EQ(data[state.offset], '<');
+        ASSERT_EQ(*(state.start + state.offset), '<');
     }
 
     aligned_free(data);

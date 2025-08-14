@@ -12,7 +12,6 @@
 typedef struct {
     const char *start;
     const char *end;
-    size_t stride_offset;
     size_t offset;
     uint64_t matches;
 } simd_html_match_state_t;
@@ -123,6 +122,7 @@ static inline void simd_html_match_state_update(simd_html_match_state_t *state, 
     );
 
     state->matches = simde_mm256_extract_epi64(sums, 0);
+    state->offset = 0;
 }
 
 
@@ -141,7 +141,6 @@ static simd_html_match_state_t simd_html_match_state_init(const char *start, con
     simd_html_match_state_t state;
     state.start = start;
     state.end = end;
-    state.stride_offset = 0;
     state.offset = 0;
     state.matches = 0;
 
@@ -162,8 +161,6 @@ void simd_html_match_state_consume(simd_html_match_state_t *state) {
 bool simd_html_match_state_advance(simd_html_match_state_t *state) {
     while (state->matches == 0) {
         state->start += 64;
-        state->stride_offset += 64;
-        state->offset = state->stride_offset;
 
         if (state->start >= state->end) {
             return false;
