@@ -6,6 +6,7 @@
 #include <stdbool.h>
 #include <stdarg.h>
 
+#include "aligned/aligned.h"
 #include "bit_utils/bit_utils.h"
 #include "simde_avx2/avx2.h"
 
@@ -19,14 +20,14 @@ typedef struct {
 static inline void simd_html_match_state_update(simd_html_match_state_t *state, const char *buffer) {
     if (state == NULL || buffer == NULL) return;
 
-    static uint8_t low_nibble_mask_data[32] = {
+    static uint8_t alignas(32) low_nibble_mask_data[32] = {
         0, 0, 0, 0, 0, 0, 0x26, 0, 
         0, 0, 0, 0, 0x3c, 0xd, 0, 0,
         0, 0, 0, 0, 0, 0, 0x26, 0, 
         0, 0, 0, 0, 0x3c, 0xd, 0, 0,
     };
 
-    static uint8_t bit_mask_data[32] = {
+    static uint8_t alignas(32) bit_mask_data[32] = {
         0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80,
         0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80,
         0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80,
@@ -54,14 +55,14 @@ static inline void simd_html_match_state_update(simd_html_match_state_t *state, 
     simde__m256i matchesones1 = simde_mm256_cmpeq_epi8(lowpart1, data1);
     simde__m256i matchesones2 = simde_mm256_cmpeq_epi8(lowpart2, data2);
 
-    static const uint8_t odds_data[32] = {
+    static const uint8_t alignas(32) odds_data[32] = {
         1, 3, 5, 7, 9, 11, 13, 15,
         -1, -1, -1, -1, -1, -1, -1, -1,
         1, 3, 5, 7, 9, 11, 13, 15,
         -1, -1, -1, -1, -1, -1, -1, -1,
     };
 
-    static const uint8_t evens_data[32] = {
+    static const uint8_t alignas(32) evens_data[32] = {
         0, 2, 4, 6, 8, 10, 12, 14,
         -1, -1, -1, -1, -1, -1, -1, -1,
         0, 2, 4, 6, 8, 10, 12, 14,
@@ -128,10 +129,10 @@ static inline void simd_html_match_state_update(simd_html_match_state_t *state, 
 
 
 static inline void simd_html_match_state_careful_update(simd_html_match_state_t *state) {
-    uint8_t buffer[64] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-                          1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-                          1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-                          1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+    alignas(32) uint8_t buffer[64] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                                      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                                      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                                      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
     memcpy(buffer, state->start, state->end - state->start);
     simd_html_match_state_update(state, (const char *)buffer);
 }
