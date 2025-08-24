@@ -8,7 +8,6 @@
 
 #include "aligned/aligned.h"
 #include "bit_utils/bit_utils.h"
-#include "simde_avx2/avx2.h"
 
 typedef struct {
     const uint8_t *start;
@@ -16,6 +15,11 @@ typedef struct {
     size_t offset;
     uint64_t matches;
 } simd_html_match_state_t;
+
+
+#if !defined(__aarch64__)
+// Not on ARM NEON. Use AVX2 instructions. This is zero-overhead for most processors, or SIMDe will emulate using the platform's instructions.
+#include "simde_avx2/avx2.h"
 
 static inline void simd_html_match_state_update(simd_html_match_state_t *state, const uint8_t *buffer) {
     if (state == NULL || buffer == NULL) return;
@@ -125,6 +129,40 @@ static inline void simd_html_match_state_update(simd_html_match_state_t *state, 
     state->matches = simde_mm256_extract_epi64(sums, 0);
     state->offset = 0;
 }
+#else
+// ARM NEON uses smaller registers but has better instructions for this task (PADDQ), and also more superscalarity (more instructions per cycle)
+#include <arm_neon.h>
+
+static inline void simd_html_match_state_update(simd_html_match_state_t *state, const uint8_t *buffer) {
+    if (state == NULL || buffer == NULL) return;
+    static const uint8x16_t low_nibble_mask = {0, 0, 0, 0, 0, 0, 0x26, 0, 0, 0, 0, 0, 0x3c, 0xd, 0, 0};
+    static const uint8x16_t bit_mask = {0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80,
+                                        0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80};
+    uint8x16_t v0f = vmovq_n_u8(0xf);
+    uint8x16_t data1 = vld1q_u8(buffer);
+    uint8x16_t data2 = vld1q_u8(buffer + 16);
+    uint8x16_t data3 = vld1q_u8(buffer + 32);
+    uint8x16_t data4 = vld1q_u8(buffer + 48);
+
+    uint8x16_t lowpart1 = vqtbl1q_u8(low_nibble_mask, data1 & v0f);
+    uint8x16_t lowpart2 = vqtbl1q_u8(low_nibble_mask, data2 & v0f);
+    uint8x16_t lowpart3 = vqtbl1q_u8(low_nibble_mask, data3 & v0f);
+    uint8x16_t lowpart4 = vqtbl1q_u8(low_nibble_mask, data4 & v0f);
+
+    uint8x16_t matchesones1 = vceqq_u8(lowpart1, data1);
+    uint8x16_t matchesones2 = vceqq_u8(lowpart2, data2);
+    uint8x16_t matchesones3 = vceqq_u8(lowpart3, data3);
+    uint8x16_t matchesones4 = vceqq_u8(lowpart4, data4);
+
+    uint8x16_t sum0 = vpaddq_u8(matchesones1 & bit_mask, matchesones2 & bit_mask);
+    uint8x16_t sum1 = vpaddq_u8(matchesones3 & bit_mask, matchesones4 & bit_mask);
+    sum0 = vpaddq_u8(sum0, sum1);
+    sum0 = vpqddq_u8(sum0, sum0);
+    state->matches = vgetq_lane_u64(vreinterpretq_u64_u8(sum0), 0);
+    state->offset = 0;
+}
+#endif
+
 
 static inline void simd_html_match_state_careful_update(simd_html_match_state_t *state) {
     alignas(32) uint8_t buffer[64] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
