@@ -11,13 +11,13 @@
 #include "simde_avx2/avx2.h"
 
 typedef struct {
-    const char *start;
-    const char *end;
+    const uint8_t *start;
+    const uint8_t *end;
     size_t offset;
     uint64_t matches;
 } simd_html_match_state_t;
 
-static inline void simd_html_match_state_update(simd_html_match_state_t *state, const char *buffer) {
+static inline void simd_html_match_state_update(simd_html_match_state_t *state, const uint8_t *buffer) {
     if (state == NULL || buffer == NULL) return;
 
     static uint8_t alignas(32) low_nibble_mask_data[32] = {
@@ -126,19 +126,17 @@ static inline void simd_html_match_state_update(simd_html_match_state_t *state, 
     state->offset = 0;
 }
 
-
-
 static inline void simd_html_match_state_careful_update(simd_html_match_state_t *state) {
     alignas(32) uint8_t buffer[64] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
                                       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
                                       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
                                       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
     memcpy(buffer, state->start, state->end - state->start);
-    simd_html_match_state_update(state, (const char *)buffer);
+    simd_html_match_state_update(state, buffer);
 }
 
 
-static simd_html_match_state_t simd_html_match_state_init(const char *start, const char *end) {
+static simd_html_match_state_t simd_html_match_state_init(const uint8_t *start, const uint8_t *end) {
     simd_html_match_state_t state;
     state.start = start;
     state.end = end;
@@ -172,7 +170,7 @@ bool simd_html_match_state_advance(simd_html_match_state_t *state) {
                 return false;
             }
         } else {
-            simd_html_match_state_update(state, (const char *)state->start);
+            simd_html_match_state_update(state, state->start);
         }
     }
     size_t off = ctz(state->matches);

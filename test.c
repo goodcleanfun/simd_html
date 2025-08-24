@@ -14,11 +14,11 @@ TEST test_html_scan(void) {
 
     size_t len = strlen((const char *)html);
 
-    char *data = aligned_malloc(len + 1, 32);
+    uint8_t *data = aligned_malloc(len + 1, 32);
     memcpy(data, html, len);
     data[len] = '\0';
 
-    for (simd_html_match_state_t state = simd_html_match_state_init((const char *)data, (const char *)data + len); simd_html_match_state_advance(&state); simd_html_match_state_consume(&state)) {
+    for (simd_html_match_state_t state = simd_html_match_state_init((const uint8_t *)data, (const uint8_t *)data + len); simd_html_match_state_advance(&state); simd_html_match_state_consume(&state)) {
         ASSERT_EQ(*(state.start + state.offset), '<');
     }
 
