@@ -157,7 +157,7 @@ static inline void simd_html_match_state_update(simd_html_match_state_t *state, 
     uint8x16_t sum0 = vpaddq_u8(matchesones1 & bit_mask, matchesones2 & bit_mask);
     uint8x16_t sum1 = vpaddq_u8(matchesones3 & bit_mask, matchesones4 & bit_mask);
     sum0 = vpaddq_u8(sum0, sum1);
-    sum0 = vpqddq_u8(sum0, sum0);
+    sum0 = vpaddq_u8(sum0, sum0);
     state->matches = vgetq_lane_u64(vreinterpretq_u64_u8(sum0), 0);
     state->offset = 0;
 }
