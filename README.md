@@ -1,5 +1,5 @@
 # simd_html
-Fast streaming HTML parser using SIMDe for token classification
+Fast streaming HTML tokenizer using SIMDe for token classification
 
 In benchmarking (with RDTSC) on an Apple x64 laptop, vectorized SIMD token classification gets around 6.2 GB/s on standard HTML pages from Google/BBC, which is about 20x faster than a naive implementation (scanning through the string one character at a time, even when checking by most frequent to least frequent and compiling with `-O3` which would trigger auto-vectorization, which might be sufficient in the case of a single matched character but not for matching multiple characters).
 
